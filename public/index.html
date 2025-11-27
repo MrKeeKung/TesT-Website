@@ -1,36 +1,39 @@
+
 <!DOCTYPE html>
-<html lang="lo">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Roblox Group Checker</title>
+  <meta charset="UTF-8">
+  <title>Roblox Checker</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 40px; }
-    input { padding: 10px; width: 250px; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
-    .box { margin-top: 20px; font-size: 20px; }
+    body { font-family: sans-serif; padding: 20px; }
+    input { padding: 8px; }
+    button { padding: 8px 12px; }
   </style>
 </head>
 <body>
-  <h2>ກວດສອບສິດການເຕີມ</h2>
-  <input id="username" placeholder="Roblox Username" />
-  <button onclick="check()">ກົດເພື່ອກວດ</button>
-  <div class="box" id="result"></div>
-
+  <h2>Roblox Group Checker</h2>
+  <input id="username" placeholder="Enter Roblox username">
+  <button onclick="check()">Check</button>
+  <p id="result"></p>
   <script>
-    async function check() {
-      const name = document.getElementById("username").value.trim();
-      if (!name) return;
-
-      const res = await fetch("/check", {
+    async function check(){
+      let u = document.getElementById("username").value;
+      let r = await fetch('/check', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: name })
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ username: u })
       });
-
-      const data = await res.json();
-      const box = document.getElementById("result");
-      box.innerText = data.message;
-      box.style.color = data.ok ? "green" : "red";
+      let j = await r.json();
+      if (j.ok) {
+        document.getElementById('result').innerText = "ໄອດີນີ້ເຕີມໄດ້ແລ້ວ ✅";
+      } else {
+        if (j.msg === "not_in_group")
+          document.getElementById('result').innerText = "ໄອດີບໍ່ໄດ້ຢູ່ໃນກຸ່ມ ❌";
+        else if (j.msg === "not_14")
+          document.getElementById('result').innerText = "ໄອດີຍັງບໍ່ຄົບ 14 ມື ("+j.left+" ມື ທີ່ເຫຼືອ) ❌";
+        else
+          document.getElementById('result').innerText = "Error";
+      }
     }
   </script>
 </body>

@@ -1,55 +1,48 @@
-const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
+
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 const GROUP_ID = 35285300;
 
-app.post("/check", async (req, res) => {
+app.post('/check', async (req, res) => {
   try {
     const username = req.body.username;
-    if (!username) return res.json({ ok: false, message: "No username provided" });
+    if (!username) return res.json({ ok:false, msg:"no username" });
 
-    const userReq = await axios.get(
-      `https://api.roblox.com/users/get-by-username?username=${username}`
-    );
-    if (!userReq.data.Id)
-      return res.json({ ok: false, message: "ຊື່ Roblox ບໍ່ຖືກຕ້ອງ" });
+    let uid = await axios.get(`https://users.roblox.com/v1/usernames/users`, {
+      data:{ usernames:[username] }
+    }).catch(()=>null);
 
-    const userId = userReq.data.Id;
+    if (!uid || !uid.data || !uid.data.data[0]) 
+      return res.json({ ok:false, msg:"ID not found" });
 
-    const groupReq = await axios.get(
-      `https://groups.roblox.com/v2/users/${userId}/groups/roles`
-    );
+    uid = uid.data.data[0].id;
 
-    const inGroup = groupReq.data.data.find((g) => g.group.id === GROUP_ID);
-    if (!inGroup) {
-      return res.json({ ok: false, message: "ໄອດີບໍ່ໄດ້ຢູ່ໃນກຸ່ມ" });
-    }
+    const member = await axios.get(
+      `https://groups.roblox.com/v1/groups/${GROUP_ID}/users/${uid}`
+    ).catch(()=>null);
 
-    const joinReq = await axios.get(
-      `https://groups.roblox.com/v1/users/${userId}/groups/roles`
-    );
-    const g = joinReq.data.data.find((x) => x.group.id === GROUP_ID);
+    if (!member || !member.data || !member.data.role) 
+      return res.json({ ok:false, msg:"not_in_group" });
 
-    const joinDate = new Date(g.created);
+    const joined = new Date(member.data.joinedAt);
     const now = new Date();
-    const diffDays = Math.floor((now - joinDate) / (1000 * 60 * 60 * 24));
+    const diff = Math.floor((now - joined) / (1000*60*60*24));
 
-    if (diffDays < 14) {
-      return res.json({
-        ok: false,
-        message: `ໄອດີຍັງເຂົ້າກຸ່ມບໍ່ຄົບ (${14 - diffDays} ມື້ຍັງເຫຼືອ)`
-      });
-    }
+    if (diff >= 14) 
+      return res.json({ ok:true, msg:"allowed" });
 
-    return res.json({ ok: true, message: "ໄອດີນີ້ເຕີມໄດ້ແລ້ວ" });
+    return res.json({ ok:false, msg:"not_14", left: 14 - diff });
   } catch (e) {
-    return res.json({ ok: false, message: "Server error" });
+    return res.json({ ok:false, msg:"error" });
   }
 });
 
-app.listen(3000, () => console.log("Server running on 3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Running on "+PORT));
