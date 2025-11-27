@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+  <meta charset="UTF-8" />
+  <title>Roblox Group Checker</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 40px; }
+    input { padding: 10px; width: 250px; font-size: 16px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    .box { margin-top: 20px; font-size: 20px; }
+  </style>
+</head>
+<body>
+  <h2>ກວດສອບສິດການເຕີມ</h2>
+  <input id="username" placeholder="Roblox Username" />
+  <button onclick="check()">ກົດເພື່ອກວດ</button>
+  <div class="box" id="result"></div>
+
+  <script>
+    async function check() {
+      const name = document.getElementById("username").value.trim();
+      if (!name) return;
+
+      const res = await fetch("/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: name })
+      });
+
+      const data = await res.json();
+      const box = document.getElementById("result");
+      box.innerText = data.message;
+      box.style.color = data.ok ? "green" : "red";
+    }
+  </script>
+</body>
+</html>
